@@ -26,8 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -75,10 +73,6 @@ public abstract class ContentServerTask extends Thread{
         Thread.currentThread().interrupt();
     }
 
-   
-    
-
-    
     protected void applyRights(DocumentManagement docManClient, Node from, Node to) {
         logger.info("Setting node rights from node " + from.getName() + "(id:" + from.getID() +")" + " to node " + to.getName() + "(id:" + to.getID() + ")");
         docManClient.setNodeRights(to.getID(), docManClient.getNodeRights(from.getID()));

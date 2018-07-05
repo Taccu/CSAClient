@@ -4,6 +4,8 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Database {
     private static ComboPooledDataSource cpds;
@@ -11,9 +13,12 @@ public class Database {
     public Database() {
         
     }
-    
+    public static boolean poolIsValid() {
+        if(cpds == null) return false;
+        return true;
+    }
     public static void setupPool(String server, String db, String user, String password) throws PropertyVetoException {
-        if(cpds == null) return;
+        if(!poolIsValid()) return;
         
         cpds = new ComboPooledDataSource();
         cpds.setDriverClass("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -25,9 +30,8 @@ public class Database {
         cpds.setMaxPoolSize(20);
     }
     
-    public Connection getConnectionToDatabase() throws SQLException, PropertyVetoException {
-        if(cpds == null) setupPool(server,  db,  user,  password);
+    public static Connection getConnectionToDatabase() throws SQLException, PropertyVetoException {
+        if(!poolIsValid()) setupPool(server,  db,  user,  password);
         return cpds.getConnection();
     }
-    
 }
