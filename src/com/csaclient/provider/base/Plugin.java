@@ -5,16 +5,14 @@
  */
 package com.csaclient.provider.base;
 
-import com.csaclient.provider.extended.logger.Logger;
 
 /**
  *
  * @author bho
  */
-public abstract class Plugin{
-    public Plugin(Logger logger, String user, String password, boolean export){
-        
-    }
+public interface Plugin{
     
     public abstract void initPlugin();
+    public abstract boolean startPlugin();
+    public abstract boolean stopPlugin();
 }
