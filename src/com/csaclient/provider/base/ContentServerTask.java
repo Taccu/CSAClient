@@ -4,8 +4,6 @@ import com.csaclient.provider.extended.logger.Logger;
 import com.opentext.ecm.api.OTAuthentication;
 import com.opentext.livelink.service.classifications.Classifications;
 import com.opentext.livelink.service.classifications.Classifications_Service;
-import com.opentext.livelink.service.core.Authentication;
-import com.opentext.livelink.service.core.Authentication_Service;
 import com.opentext.livelink.service.core.ChunkedOperationContext;
 import com.opentext.livelink.service.docman.CategoryItemsUpgradeInfo;
 import com.opentext.livelink.service.docman.DocumentManagement;
@@ -30,19 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.xml.namespace.QName;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPHeaderElement;
 
 public abstract class ContentServerTask extends Thread{
     public static final String SEARCH_API = "Livelink Search API V1.1";
-    private static final OTAuthentication OT_AUTH = new OTAuthentication();
     public final Logger logger;
     private final Timer timer;
-    private final String user, password;
     private int processedItems = 0;
     public final boolean export;
     public final ArrayList<Long> exportIds = new ArrayList<>();
@@ -54,10 +45,8 @@ public abstract class ContentServerTask extends Thread{
      * @param user
      * @param password
      */
-    public ContentServerTask(Logger logger, String user, String password, boolean export){
+    public ContentServerTask(Logger logger, boolean export){
         this.logger = logger;
-        this.user = user;
-        this.password = password;
         this.export = export;
         timer = new Timer();
     }
@@ -116,61 +105,7 @@ public abstract class ContentServerTask extends Thread{
         }
         return nrui;
     }
-    public SOAPHeaderElement generateSOAPHeaderElement(OTAuthentication oauth) throws SOAPException {
-        // The namespace of the OTAuthentication object
-        final String ECM_API_NAMESPACE = "urn:api.ecm.opentext.com";
-
-        // Create a SOAP header
-        SOAPHeader header = MessageFactory.newInstance().createMessage().getSOAPPart().getEnvelope().getHeader();
-
-        if(header == null) {throw new SOAPException("Header was null");}
-        // Add the OTAuthentication SOAP header element
-        SOAPHeaderElement otAuthElement = header.addHeaderElement(new QName(ECM_API_NAMESPACE, "OTAuthentication"));
-
-        // Add the AuthenticationToken SOAP element
-        SOAPElement authTokenElement = otAuthElement.addChildElement(new QName(ECM_API_NAMESPACE, "AuthenticationToken"));
-
-        authTokenElement.addTextNode(oauth.getAuthenticationToken());
-        return otAuthElement;
-    }
     
-    public OTAuthentication loginUserWithPassword(String user, String password) {
-        String authToken;
-        try {
-            if(OT_AUTH.getAuthenticationToken() == null || OT_AUTH.getAuthenticationToken().isEmpty()) {
-                Authentication_Service authService = new Authentication_Service();
-                Authentication authClient = authService.getBasicHttpBindingAuthentication();
-                authToken = authClient.authenticateUser(user , password);
-                // Create the OTAuthentication object and set the authentication token
-                OT_AUTH.setAuthenticationToken(authToken);
-            }
-        } catch (Exception e) {
-            handleError(e);
-        }
-        return OT_AUTH;
-    }
-    public OTAuthentication loginUserWithPassword(String user, String password, boolean force) {
-        String authToken;
-        try {
-            if(force) {
-                Authentication_Service authService = new Authentication_Service();
-                Authentication authClient = authService.getBasicHttpBindingAuthentication();
-                authToken = authClient.authenticateUser(user , password);
-                // Create the OTAuthentication object and set the authentication token
-                OT_AUTH.setAuthenticationToken(authToken);
-            }
-            if(OT_AUTH.getAuthenticationToken() == null || OT_AUTH.getAuthenticationToken().isEmpty()) {
-                Authentication_Service authService = new Authentication_Service();
-                Authentication authClient = authService.getBasicHttpBindingAuthentication();
-                authToken = authClient.authenticateUser(user , password);
-                // Create the OTAuthentication object and set the authentication token
-                OT_AUTH.setAuthenticationToken(authToken);
-            }
-        } catch (Exception e) {
-            handleError(e);
-        }
-        return OT_AUTH;
-    }
     public static void writeArrayToPath(List<Long> list, Path path) throws IOException {
         List<String> arrayList = new ArrayList<>(list.size());
         list.forEach((myLong) -> {
@@ -185,7 +120,7 @@ public abstract class ContentServerTask extends Thread{
             DocumentManagement_Service docManService = new DocumentManagement_Service();
             DocumentManagement docManClient = docManService.getBasicHttpBindingDocumentManagement();
             SOAPHeaderElement header;
-            header = generateSOAPHeaderElement(loginUserWithPassword(user, password));
+            header = Login.getOTDSHeader();
             ((WSBindingProvider) docManClient).setOutboundHeaders(Headers.create(header));
             return docManClient;
         }
@@ -200,7 +135,7 @@ public abstract class ContentServerTask extends Thread{
             DocumentManagement_Service docManService = new DocumentManagement_Service();
             DocumentManagement docManClient = docManService.getBasicHttpBindingDocumentManagement();
             SOAPHeaderElement header;
-            header = generateSOAPHeaderElement(loginUserWithPassword(user, password, force));
+            header = Login.getOTDSHeader();
             ((WSBindingProvider) docManClient).setOutboundHeaders(Headers.create(header));
             return docManClient;
         }
@@ -214,7 +149,7 @@ public abstract class ContentServerTask extends Thread{
             MemberService_Service memServService = new MemberService_Service();
             MemberService msClient = memServService.getBasicHttpBindingMemberService();
             SOAPHeaderElement header;
-            header = generateSOAPHeaderElement(loginUserWithPassword(user, password));
+            header = Login.getOTDSHeader();
             ((WSBindingProvider) msClient).setOutboundHeaders(Headers.create(header));
             return msClient;
         } catch(Exception e) {
@@ -229,7 +164,7 @@ public abstract class ContentServerTask extends Thread{
             Classifications_Service docManService = new Classifications_Service();
             Classifications docManClient = docManService.getBasicHttpBindingClassifications();
             SOAPHeaderElement header;
-            header = generateSOAPHeaderElement(loginUserWithPassword(user, password));
+            header = Login.getOTDSHeader();
             ((WSBindingProvider) docManClient).setOutboundHeaders(Headers.create(header));
             return docManClient;
         }
@@ -245,7 +180,7 @@ public abstract class ContentServerTask extends Thread{
             
             SearchService seClient = seServService.getBasicHttpBindingSearchService();
             SOAPHeaderElement header;
-            header = generateSOAPHeaderElement(loginUserWithPassword(user, password));
+            header = Login.getOTDSHeader();
             ((WSBindingProvider) seClient).setOutboundHeaders(Headers.create(header));
             return seClient;
         }
