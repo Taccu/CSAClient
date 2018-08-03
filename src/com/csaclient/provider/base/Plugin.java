@@ -11,7 +11,6 @@ package com.csaclient.provider.base;
  * @author bho
  */
 public interface Plugin{
-    
     public abstract void initPlugin();
     public abstract boolean startPlugin();
     public abstract boolean stopPlugin();

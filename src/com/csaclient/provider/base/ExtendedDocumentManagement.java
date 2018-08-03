@@ -16,8 +16,6 @@
  */
 package com.csaclient.provider.base;
 
-import com.opentext.livelink.service.docman.DocumentManagement;
-
 /**
  *
  * @author bho
